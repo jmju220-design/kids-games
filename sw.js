@@ -1,4 +1,4 @@
-const CACHE='kids-games-66583fd2';
+const CACHE='kids-games-8f57b324';
 const FILES=["./", "index.html", "style.css", "app.js", "bundle-img.js", "bundle-snd.js", "manifest.webmanifest", "icon-180.png", "icon-512.png"];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()).then(()=>self.clients.matchAll()).then(cs=>cs.forEach(c=>c.postMessage('cached'))));});

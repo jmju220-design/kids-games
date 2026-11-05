@@ -61,25 +61,17 @@ const Snd = {
   setVol(v) { if (this.master) this.master.gain.setTargetAtTime(v / 100, this.ctx.currentTime, 0.05); }
 };
 
-/* ---------- speech (on-device Korean voice) ---------- */
+/* ---------- voice lines (pre-recorded natural Korean voice, works offline) ---------- */
 const Voice = {
-  v: null,
-  init() {
-    if (!('speechSynthesis' in window)) return;
-    const choose = () => { const vs = speechSynthesis.getVoices(); this.v = vs.find(v => v.lang === 'ko-KR' && /yuna|유나/i.test(v.name)) || vs.find(v => /^ko/.test(v.lang)) || null; };
-    choose(); speechSynthesis.onvoiceschanged = choose;
+  cur: null,
+  say(key, o = {}) {
+    if (!settings.voice) return null;
+    if (this.cur) this.cur.fade(0.08);
+    this.cur = Snd.play('vo_' + key, { vol: o.vol || 1, delay: o.delay || 0 });
+    return this.cur;
   },
-  unlock() { if ('speechSynthesis' in window) { const u = new SpeechSynthesisUtterance(' '); u.volume = 0; speechSynthesis.speak(u); } },
-  say(t, o = {}) {
-    if (!settings.voice || !('speechSynthesis' in window)) return;
-    try {
-      speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(t); u.lang = 'ko-KR'; if (this.v) u.voice = this.v;
-      u.rate = o.rate || 0.9; u.pitch = o.pitch || 1.3; u.volume = Math.min(1, settings.vol / 100 + 0.1);
-      speechSynthesis.speak(u);
-    } catch (e) {}
-  },
-  stop() { try { speechSynthesis.cancel(); } catch (e) {} }
+  dur(key) { return Snd.dur('vo_' + key); },
+  stop() { if (this.cur) { this.cur.fade(0.08); this.cur = null; } }
 };
 
 /* ---------- screen wake lock ---------- */
@@ -163,7 +155,7 @@ GAMES.push({ id: 'animals', icon: 'dog-face', color: '#ffe3b3', start(st, S) {
       if (cur) cur.fade(0.12); cur = S.snd(snd);
       boing(i, 1.22); anim(c, [{ transform: 'scale(.95)' }, { transform: 'scale(1)' }], { duration: 300, fill: 'none' });
       const p = center(c); for (let k = 0; k < 2; k++) S.t(() => floatUp(st, p.x + rand(-p.w / 3, p.w / 3), p.y - p.h / 4, pick(['musical-note', 'musical-notes']), 44, rand(0, 300)), k * 220);
-      clearTimeout(sayT); Voice.stop(); sayT = S.t(() => Voice.say(`${cry}! ${name}`), Snd.dur(snd) * 1000 + 80);
+      clearTimeout(sayT); Voice.stop(); sayT = S.t(() => Voice.say('a_' + snd), Snd.dur(snd) * 1000 + 60);
     });
   });
 } });
@@ -212,7 +204,7 @@ GAMES.push({ id: 'peek', icon: 'wrapped-gift', color: '#ffe0e9', start(st, S) {
       busy = true; showing.add(animal);
       anim(hider, [{ transform: 'none' }, away], { duration: 450, easing: 'cubic-bezier(.3,1.4,.5,1)' });
       anim(who, [{ transform: 'translateY(40%) scale(.3)', opacity: 0 }, { transform: 'translateY(-12%) scale(1.12)', opacity: 1, offset: .65 }, { transform: 'translateY(0) scale(1)', opacity: 1 }], { duration: 520, delay: 120 });
-      S.snd('reveal'); S.t(() => Voice.say('까꿍!', { pitch: 1.45, rate: 1 }), 150);
+      S.snd('reveal'); S.t(() => Voice.say(pick(['peek1', 'peek1', 'peek2', 'peek3'])), 150);
       const p = center(slot); S.t(() => burst(st, p.x, p.y, { n: 9, imgs: ['sparkles', 'star', 'red-heart'], size: 44, spread: p.w * .6 }), 300);
       S.t(() => {
         anim(who, [{ transform: 'scale(1)', opacity: 1 }, { transform: 'translateY(30%) scale(.4)', opacity: 0 }], { duration: 380, easing: 'ease-in' });
@@ -320,7 +312,7 @@ GAMES.push({ id: 'window', icon: 'window', color: '#d3f9d8', start(st, S) {
   S.iv(() => {
     if (done || !P.size) return;
     if (cleared() > .62) {
-      done = true; P.clear(); fog.style.opacity = 0; S.snd('yay'); S.t(() => Voice.say('와아!', { pitch: 1.4 }), 200);
+      done = true; P.clear(); fog.style.opacity = 0; S.snd('yay'); S.t(() => Voice.say(pick(['win1', 'win2', 'win3'])), 250);
       [...scene.children].forEach((c, k) => S.t(() => boing(c, 1.25), 200 + k * 120));
       const p = center(glass); S.t(() => burst(st, p.x, p.y, { n: 16, imgs: ['sparkles', 'star', 'glowing-star'], size: 50, spread: p.w * .6 }), 250);
       S.t(() => { drawFog(); fog.style.opacity = 1; S.snd('wipe', { vol: .5, rate: .6 }); S.t(() => { si++; setScene(si); done = false; }, 750); }, 4200);
@@ -328,48 +320,110 @@ GAMES.push({ id: 'window', icon: 'window', color: '#d3f9d8', start(st, S) {
   }, 350);
 } });
 
-/* 7. 냠냠 먹이 주기 */
+/* 7. 냠냠 먹이 주기 — 입을 크게 벌려 받아먹고, 오물오물 씹고, 꿀꺽! */
+const MOUTHS = {
+  frog: { x: .5, y: .545, rx: .40, ry: .32, open: .15, smile: .09, cx: .30, cy: .47 },
+  bear: { x: .5, y: .712, rx: .13, ry: .095, open: .075, smile: .03 },
+  panda: { x: .5, y: .712, rx: .12, ry: .09, open: .07, smile: .03 },
+  'rabbit-face': { x: .5, y: .735, rx: .105, ry: .085, open: .07, smile: .03, teeth: 1 },
+  hamster: { x: .5, y: .795, rx: .10, ry: .075, open: .065, smile: .03, teeth: 1 },
+  'pig-face': { x: .5, y: .785, rx: .13, ry: .085, open: .07, smile: .03 },
+  'tiger-face': { x: .5, y: .665, rx: .14, ry: .13, open: .085, smile: .04 }
+};
+function mouthPath(m, grow = 0) {
+  const rx = (m.rx + grow) * 100, ry = (m.ry + grow) * 100, T = (m.y - grow * .6) * 100, L = m.x * 100 - rx, R = m.x * 100 + rx;
+  return `M${L} ${T} Q${m.x * 100} ${T + m.smile * 200} ${R} ${T} A${rx} ${ry} 0 0 1 ${L} ${T} Z`;
+}
+const svgMask = d => `url("data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><path fill-rule='evenodd' fill='#000' d='${d}'/></svg>`)}")`;
+function setMask(e, d) { e.style.webkitMaskImage = e.style.maskImage = svgMask(d); e.style.webkitMaskSize = e.style.maskSize = '100% 100%'; }
+
 GAMES.push({ id: 'feed', icon: 'red-apple', color: '#ffe3e3', start(st, S) {
   st.className = 'g-feed';
-  const EATERS = shuffle(['bear', 'pig-face', 'monkey-face', 'rabbit-face', 'hippopotamus', 'hamster', 'panda', 'frog']);
+  const EATERS = shuffle(Object.keys(MOUTHS));
   const FOODS = ['red-apple', 'banana', 'strawberry', 'grapes', 'carrot', 'watermelon', 'cookie', 'cherries', 'tangerine', 'peach', 'cupcake', 'doughnut', 'ice-cream'];
-  const eater = el('div', 'eater', st), ei = im(EATERS[0], eater), tummy = el('div', 'tummy', st), tray = el('div', 'tray', st);
+  const eater = el('div', 'eater', st), head = el('div', 'head', eater);
+  const cav = el('div', 'cav', head), tongue = el('div', 'tongue', cav), teeth = el('div', 'teeth', cav);
+  const face = im('bear', head, 'face'), jaw = el('div', 'jaw', head), jimg = im('bear', jaw);
+  const cheeks = [el('div', 'cheek', head), el('div', 'cheek', head)];
+  const tummy = el('div', 'tummy', st), tray = el('div', 'tray', st);
   const slots = [...Array(5)].map(() => el('span', '', tummy));
-  let ix = 0, count = 0, busy = false;
+  let m, ix = 0, count = 0, busy = false, inFlight = 0, gen = 0, idle = performance.now();
+
+  function setAnimal(name) {
+    m = MOUTHS[name]; face.src = jimg.src = src(name);
+    setMask(face, 'M0 0H100V100H0Z ' + mouthPath(m)); setMask(jaw, mouthPath(m, .007));
+    cav.style.cssText = `left:${(m.x - m.rx) * 100}%;top:${(m.y - .01) * 100}%;width:${m.rx * 200}%;height:${(m.ry + .02) * 100}%`;
+    teeth.style.display = m.teeth ? 'block' : 'none';
+    const dx = m.cx || m.rx + .1, cy = m.cy || m.y - .035;
+    cheeks.forEach((c, i) => { c.style.left = (m.x + (i ? dx : -dx)) * 100 + '%'; c.style.top = cy * 100 + '%'; c.style.opacity = 0; });
+    jawTo(0, 0);
+  }
+  function jawTo(f, ms = 200, ease = 'ease-out') { jaw.style.transition = `transform ${ms}ms ${ease}`; jaw.style.transform = `translateY(${f * m.open * 100}%)`; cav.style.opacity = f > 0 ? 1 : 0; if (f === 0) S.t(() => { if (jaw.style.transform === 'translateY(0%)') cav.style.opacity = 0; }, ms); else cav.style.opacity = 1; }
+  function blush(on) { cheeks.forEach(c => { c.style.transition = 'opacity .25s'; c.style.opacity = on ? .75 : 0; }); }
+  function mouthPoint() { const r = head.getBoundingClientRect(); return { x: r.left + m.x * r.width, y: r.top + (m.y + m.open * .45) * r.height, w: r.width }; }
+  setAnimal(EATERS[0]); window._feed = { setAnimal, jawTo: (f, ms) => jawTo(f, ms), blush };
+
+  function chew() {
+    const g = ++gen, step = (ms, fn) => S.t(() => { if (g === gen) fn(); }, ms);
+    jawTo(0, 70, 'ease-in'); S.snd(pick(['chomp1', 'chomp2', 'chomp3']));
+    head.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.07,.93)' }, { transform: 'scale(1)' }], { duration: 220 });
+    blush(true);
+    [[170, .32], [300, 0], [440, .28], [570, 0], [700, .22], [820, 0]].forEach(([t, f], k) => step(t, () => { jawTo(f, 110, 'ease-in-out'); if (f === 0 && k < 4) S.snd(pick(['chomp1', 'chomp2', 'chomp3']), { vol: .45, rate: rand(1.05, 1.25) }); }));
+    step(170, () => head.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-4deg)' }, { transform: 'rotate(4deg)' }, { transform: 'rotate(-3deg)' }, { transform: 'rotate(0)' }], { duration: 650 }));
+    step(950, () => { // gulp
+      head.animate([{ transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-4%) scale(1.04)' }, { transform: 'translateY(0) scale(1)' }], { duration: 300, easing: 'ease-out' });
+      S.snd('pick', { rate: .6, vol: .8 }); blush(false);
+      if (inFlight > 0) jawTo(1, 200, 'cubic-bezier(.3,1.5,.5,1)');
+    });
+  }
+  function happy() {
+    const g = ++gen, step = (ms, fn) => S.t(() => { if (g === gen) fn(); }, ms);
+    S.snd('yum'); step(350, () => S.snd('yay')); Voice.say(pick(['yum1', 'yum2']));
+    blush(true); jawTo(.85, 260, 'cubic-bezier(.3,1.5,.5,1)');
+    step(280, () => tongue.animate([{ transform: 'translate(0,0) rotate(0)' }, { transform: 'translate(-22%,-30%) rotate(-12deg)' }, { transform: 'translate(22%,-30%) rotate(12deg)' }, { transform: 'translate(-16%,-26%) rotate(-8deg)' }, { transform: 'translate(0,0) rotate(0)' }], { duration: 1100, easing: 'ease-in-out' }));
+    head.animate([{ transform: 'rotate(0) translateY(0)' }, { transform: 'rotate(-10deg) translateY(-8%)' }, { transform: 'rotate(10deg) translateY(-8%)' }, { transform: 'rotate(-6deg) translateY(-4%)' }, { transform: 'rotate(0) translateY(0)' }], { duration: 1300, delay: 200 });
+    const p = mouthPoint(); for (let k = 0; k < 3; k++) S.t(() => burst(st, p.x + rand(-60, 60), p.y - p.w * .3, { n: 8, imgs: ['red-heart', 'orange-heart', 'sparkles', 'yellow-heart'], size: 50, spread: 200 }), 200 + k * 250);
+    step(1700, () => { jawTo(0, 200); blush(false); });
+  }
+
   const plates = [...Array(5)].map(() => { const p = el('div', 'plate', tray), n = pick(FOODS), i = im(n, p); i.dataset.n = n; return p; });
   plates.forEach(p => S.on(p, 'pointerdown', () => {
-    if (p.classList.contains('empty') || busy) return;
-    const food = p.firstChild, from = center(food), to = center(ei);
-    const ty = to.y + to.h * .12;
+    if (p.classList.contains('empty') || busy || count + inFlight >= 5) return;
+    idle = performance.now(); inFlight++;
+    const food = p.firstChild, from = center(food), name = food.dataset.n;
     p.classList.add('empty'); S.snd('whoosh', { vol: .7 }); S.snd('pick', { vol: .7 });
-    const f = im(food.dataset.n, st, 'fx');
-    f.style.cssText += `left:${from.x}px;top:${from.y}px;width:${from.w}px`;
-    const mx = (from.x + to.x) / 2, my = Math.min(from.y, ty) - 140;
-    const a = anim(f, [{ transform: 'translate(-50%,-50%) scale(1)' }, { transform: `translate(calc(-50% + ${mx - from.x}px),calc(-50% + ${my - from.y}px)) scale(1.1) rotate(180deg)`, offset: .5 }, { transform: `translate(calc(-50% + ${to.x - from.x}px),calc(-50% + ${ty - from.y}px)) scale(.3) rotate(360deg)` }], { duration: 620, easing: 'ease-in-out' });
-    const fsrc = food.src;
-    a.onfinish = () => {
-      f.remove(); S.snd(pick(['chomp1', 'chomp2', 'chomp3']));
-      ei.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.08,.9)' }, { transform: 'scale(.95,1.06)' }, { transform: 'scale(1.08,.9)' }, { transform: 'scale(1)' }], { duration: 500 });
-      burst(st, to.x, ty, { n: 7, colors: ['#e8a85a', '#ffd8a8', '#c97a3a'], imgs: ['red-heart'], size: 30, spread: 80, gravity: true });
-      if (count < 5) { const sl = slots[count]; sl.innerHTML = ''; const mi = el('img', '', sl); mi.src = fsrc; boing(sl, 1.3); }
-      count++; eater.style.scale = 1 + count * 0.045;
-      if (count >= 5) {
-        busy = true; S.t(() => { S.snd('yum'); S.t(() => S.snd('yay'), 350); Voice.say('냠냠, 맛있어!', { pitch: 1.4 });
-          ei.animate([{ transform: 'rotate(0) translateY(0)' }, { transform: 'rotate(-12deg) translateY(-14%)' }, { transform: 'rotate(12deg) translateY(-14%)' }, { transform: 'rotate(0) translateY(0)' }], { duration: 900 });
-          for (let k = 0; k < 3; k++) S.t(() => burst(st, to.x + rand(-60, 60), to.y, { n: 8, imgs: ['red-heart', 'orange-heart', 'sparkles', 'yellow-heart'], size: 50, spread: 200 }), k * 250);
-        }, 450);
-        S.t(() => {
-          anim(eater, [{ transform: 'translateX(0)', opacity: 1 }, { transform: 'translateX(60vw)', opacity: 0 }], { duration: 450, easing: 'ease-in' }).onfinish = () => {
-            ix++; ei.src = src(EATERS[ix % EATERS.length]); count = 0; eater.style.scale = 1; slots.forEach(s => s.innerHTML = '');
-            anim(eater, [{ transform: 'translateX(-60vw)', opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], { duration: 550, easing: 'cubic-bezier(.3,1.3,.5,1)' }).onfinish = () => { busy = false; };
-            S.snd('boing', { vol: .6 });
-          };
-        }, 3200);
-      }
+    // open wide in anticipation
+    gen++; jawTo(1, 230, 'cubic-bezier(.3,1.5,.5,1)'); blush(false);
+    head.animate([{ transform: 'translateY(0)' }, { transform: 'translateY(-3%) scale(1.03)' }, { transform: 'translateY(0)' }], { duration: 600 });
+    if (count === 0 && inFlight === 1) Voice.say('ahh');
+    const f = im(name, st, 'fx'); f.style.cssText += `left:${from.x}px;top:${from.y}px;width:${from.w}px`;
+    const to = mouthPoint(), mx = (from.x + to.x) / 2, my = Math.min(from.y, to.y) - 160;
+    anim(f, [{ transform: 'translate(-50%,-50%) scale(1)' }, { transform: `translate(calc(-50% + ${mx - from.x}px),calc(-50% + ${my - from.y}px)) scale(1.05) rotate(160deg)`, offset: .55 }, { transform: `translate(calc(-50% + ${to.x - from.x}px),calc(-50% + ${to.y - from.y}px)) scale(.42) rotate(330deg)` }], { duration: 650, easing: 'ease-in-out' }).onfinish = () => {
+      f.remove(); inFlight--;
+      const q = mouthPoint(); burst(st, q.x, q.y, { n: 7, colors: ['#e8a85a', '#ffd8a8', '#c97a3a'], imgs: ['sparkles'], size: 26, spread: 70, gravity: true });
+      if (count < 5) { const sl = slots[count]; sl.innerHTML = ''; im(name, sl); boing(sl, 1.3); }
+      count++; eater.style.scale = 1 + count * 0.04;
+      if (count === 3) S.t(() => Voice.say('yum3'), 300);
+      if (count >= 5) { busy = true; chew(); S.t(happy, 1150); S.t(nextAnimal, 3600); }
+      else chew();
     };
     S.t(() => { const nn = pick(FOODS); food.dataset.n = nn; food.src = src(nn); p.classList.remove('empty'); }, 800);
   }));
-  S.on(eater, 'pointerdown', () => { boing(ei); S.snd('boing', { vol: .6 }); });
+  function nextAnimal() {
+    anim(eater, [{ transform: 'translateX(0)', opacity: 1 }, { transform: 'translateX(60vw)', opacity: 0 }], { duration: 450, easing: 'ease-in' }).onfinish = () => {
+      ix++; setAnimal(EATERS[ix % EATERS.length]); count = 0; eater.style.scale = 1; slots.forEach(s => s.innerHTML = '');
+      anim(eater, [{ transform: 'translateX(-60vw)', opacity: 0 }, { transform: 'translateX(0)', opacity: 1 }], { duration: 550, easing: 'cubic-bezier(.3,1.3,.5,1)' }).onfinish = () => { busy = false; idle = performance.now(); };
+      S.snd('boing', { vol: .6 });
+    };
+  }
+  // hungry hint after a few seconds of waiting
+  S.iv(() => {
+    if (busy || inFlight || performance.now() - idle < 5000) return; idle = performance.now();
+    const g = ++gen; jawTo(.55, 250); S.t(() => { if (g === gen) jawTo(0, 200); }, 700);
+    head.animate([{ transform: 'rotate(0)' }, { transform: 'rotate(-5deg)' }, { transform: 'rotate(5deg)' }, { transform: 'rotate(0)' }], { duration: 700 });
+    boing(pick(plates).firstChild, 1.15);
+  }, 1000);
+  S.on(eater, 'pointerdown', () => { if (busy || inFlight) return; idle = performance.now(); boing(head, 1.1); S.snd('boing', { vol: .6 }); const g = ++gen; jawTo(.6, 150); S.t(() => { if (g === gen) jawTo(0, 150); }, 380); });
   eater.style.pointerEvents = 'auto';
 } });
 
@@ -379,12 +433,12 @@ GAMES.push({ id: 'cars', icon: 'automobile', color: '#fff3bf', start(st, S) {
   el('div', 'road', st); im('sun-with-face', st, 'sun');
   for (let i = 0; i < 3; i++) { const c = im('cloud', st, 'cloud'); c.style.cssText = `top:${4 + i * 11}%;width:${rand(14, 22)}vmin;animation-duration:${rand(45, 70)}s;animation-delay:-${rand(0, 40)}s`; }
   const V = [
-    { n: 'automobile', snd: ['horn', 'engine'], say: '부릉부릉!', lane: 'road', dur: 3200 },
-    { n: 'bus', snd: ['horn'], say: '빵빵!', lane: 'road', dur: 3800, size: 1.15 },
-    { n: 'fire-engine', snd: ['siren'], say: '삐뽀삐뽀!', lane: 'road', dur: 3600, size: 1.1 },
-    { n: 'locomotive', snd: ['whistle', 'train'], say: '칙칙폭폭!', lane: 'road', dur: 4200, size: 1.15 },
-    { n: 'helicopter', snd: ['heli'], say: '두두두두!', lane: 'sky', dur: 4200 },
-    { n: 'airplane', snd: ['airplane'], say: '슝!', lane: 'up', dur: 3600 }
+    { n: 'automobile', snd: ['horn', 'engine'], say: 'v_car', lane: 'road', dur: 3200 },
+    { n: 'bus', snd: ['horn'], say: 'v_bus', lane: 'road', dur: 3800, size: 1.15 },
+    { n: 'fire-engine', snd: ['siren'], say: 'v_fire', lane: 'road', dur: 3600, size: 1.1 },
+    { n: 'locomotive', snd: ['whistle', 'train'], say: 'v_train', lane: 'road', dur: 4200, size: 1.15 },
+    { n: 'helicopter', snd: ['heli'], say: 'v_heli', lane: 'sky', dur: 4200 },
+    { n: 'airplane', snd: ['airplane'], say: 'v_plane', lane: 'up', dur: 3600 }
   ];
   const bar = el('div', 'vbar', st); let live = 0;
   V.forEach(v => {
@@ -397,8 +451,8 @@ GAMES.push({ id: 'cars', icon: 'automobile', color: '#fff3bf', start(st, S) {
       if (v.lane === 'road') { const y = H * .725 - sz * .78; kf = [{ transform: `translate(${W + 20}px,${y}px)` }, { transform: `translate(${-sz - 20}px,${y}px)` }]; }
       else if (v.lane === 'sky') { const y = H * rand(.08, .22); inner.style.animationDuration = '.6s'; kf = [{ transform: `translate(${W + 20}px,${y}px)` }, { transform: `translate(${W * .5}px,${y + 40}px)` }, { transform: `translate(${-sz - 20}px,${y - 10}px)` }]; }
       else { inner.style.animation = 'none'; kf = [{ transform: `translate(${-sz}px,${H * .5}px)` }, { transform: `translate(${W + 20}px,${-sz}px)` }]; }
-      const delay = settings.voice ? 550 : 0; if (settings.voice) Voice.say(v.say, { pitch: 1.4, rate: 1 });
-      v.snd.forEach((s, k) => S.snd(s, { delay: delay / 1000 + k * (s === 'engine' ? .5 : .9), vol: s === 'engine' ? .6 : 1 }));
+      v.snd.forEach((s, k) => S.snd(s, { delay: k * (s === 'engine' ? .5 : .9), vol: (s === 'engine' ? .55 : .85) }));
+      Voice.say(v.say, { delay: .7 });
       anim(d, kf, { duration: v.dur, easing: 'linear' }).onfinish = () => { d.remove(); live--; };
       S.on(d, 'pointerdown', () => { boing(inner, 1.2); S.snd(v.snd[0], { vol: .8 }); });
       d.style.pointerEvents = 'auto';
@@ -464,7 +518,7 @@ GAMES.push({ id: 'puzzle', icon: 'puzzle-piece', color: '#c3fae8', start(st, S) 
     });
   }
   function complete(name, L) {
-    S.snd('yay'); Voice.say(NAMES[name] ? NAMES[name] + '!' : '잘했어!', { pitch: 1.35 });
+    S.snd('yay'); S.t(() => Voice.say('p_' + name), 200);
     pieces.forEach(p => p.animate([{ scale: 1 }, { scale: 1.08 }, { scale: 1 }], { duration: 500, delay: 100 }));
     ghost.style.opacity = 0;
     for (let k = 0; k < 3; k++) S.t(() => burst(st, L.bx + L.P / 2 + rand(-80, 80), L.by + L.P / 2 + rand(-80, 80), { n: 10, imgs: ['sparkles', 'star', 'glowing-star', 'red-heart'], size: 54, spread: L.P * .7 }), k * 220);
@@ -488,7 +542,7 @@ GAMES.push({ id: 'sleep', icon: 'crescent-moon', color: '#d0bfff', start(st, S) 
     S.on(sp, 'pointerdown', () => {
       if (zz) { S.snd(pick(['twinkle1', 'twinkle3']), { vol: .5 }); return; }
       zz = true; asleep++;
-      S.snd('sleep'); S.t(() => Voice.say('잘 자', { pitch: 1.2, rate: .75 }), 500);
+      S.snd('sleep'); S.t(() => Voice.say('n_' + n), 600);
       s.style.animation = 'none';
       anim(si, [{ transform: 'translateY(0) rotate(0)' }, { transform: 'translateY(-8%) rotate(-6deg)', offset: .3 }, { transform: `translateY(38%) rotate(${i % 2 ? 14 : -14}deg)` }], { duration: 1400, easing: 'ease-in-out' });
       const zloop = () => { const p = center(sp); const z = im('zzz', st, 'fx'); z.style.cssText += `left:${p.x + p.w * .25}px;top:${p.y}px;width:${p.w * .35}px`; z.style.zIndex = 21;
@@ -496,8 +550,8 @@ GAMES.push({ id: 'sleep', icon: 'crescent-moon', color: '#d0bfff', start(st, S) 
       S.t(() => { zloop(); S.iv(zloop, 2400); }, 900);
       dim.style.opacity = asleep * .1;
       if (asleep === WHO.length) {
-        S.t(() => { S.snd('lightsoff'); dim.style.opacity = .55; }, 1800);
-        S.t(() => { const l = S.snd('lullaby', { vol: .75 }); if (l) l.onended = () => S.t(() => S.snd('lullaby', { vol: .55 }), 1500); }, 3200);
+        S.t(() => { S.snd('lightsoff'); dim.style.opacity = .55; S.t(() => Voice.say('n_all'), 900); }, 2400);
+        S.t(() => { const l = S.snd('lullaby', { vol: .75 }); if (l) l.onended = () => S.t(() => S.snd('lullaby', { vol: .55 }), 1500); }, 6200);
       }
     });
   });
@@ -529,7 +583,7 @@ const setPanel = $('#settings');
 holdButton($('#gear'), 1000, () => { $('#vol').value = settings.vol; $('#voice').checked = settings.voice; setPanel.hidden = false; checkOffline(); });
 $('#vol').addEventListener('input', e => { settings.vol = +e.target.value; Snd.setVol(settings.vol); saveSettings(); });
 $('#vol').addEventListener('change', () => Snd.play('xy_G5'));
-$('#voice').addEventListener('change', e => { settings.voice = e.target.checked; saveSettings(); if (settings.voice) Voice.say('안녕!'); });
+$('#voice').addEventListener('change', e => { settings.voice = e.target.checked; saveSettings(); if (settings.voice) Voice.say('hello'); });
 $('#closeSettings').addEventListener('click', () => setPanel.hidden = true);
 // allow normal touch on the settings panel controls
 setPanel.addEventListener('touchmove', e => e.stopPropagation(), { passive: true });
@@ -540,12 +594,11 @@ setPanel.addEventListener('touchmove', e => e.stopPropagation(), { passive: true
 const status = $('#status');
 let decoding = null;
 function prepare() { if (!decoding) { Snd.create(); decoding = Snd.decodeAll((d, n) => { if (d < n) status.textContent = `소리 준비 중… ${d}/${n}`; }); decoding.then(() => checkOffline()); } return decoding; }
-Voice.init();
 prepare();
 $('#playBtn').addEventListener('pointerdown', async () => {
-  Snd.unlock(); Voice.unlock(); keepAwake();
+  Snd.unlock(); keepAwake();
   await prepare();
-  Snd.play('yay', { vol: .7 });
+  Snd.play('yay', { vol: .6 }); Voice.say('hello', { delay: .4 });
   show('menu');
 });
 

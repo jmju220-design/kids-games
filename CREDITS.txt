@@ -26,3 +26,5 @@ UI 효과음 일부: Kenney Interface Sounds (CC0) — https://kenney.nl
 
 자장가: '반짝반짝 작은 별'(공유 저작물) 선율을 오르골 음원으로 연주.
 풍선·냠냠·와이퍼 등 나머지 효과음은 위 악기 음원과 합성음으로 직접 제작.
+
+음성(한국어 말소리): Supertonic 3 by Supertone (코드 MIT, 모델은 Supertone 공개 라이선스), sherpa-onnx로 미리 생성 — https://github.com/supertone-inc/supertonic
