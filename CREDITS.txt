@@ -1,0 +1,28 @@
+꼬마놀이 — 사용한 소재와 라이선스 (개인·비상업 용도)
+
+이미지: Microsoft Fluent Emoji (MIT License) — https://github.com/microsoft/fluentui-emoji
+
+악기 음원(실로폰, 오르골, 첼레스타, 글로켄슈필, 마림바, 칼림바):
+  MusyngKite soundfont via gleitz/midi-js-soundfonts (CC BY-SA 3.0) — https://github.com/gleitz/midi-js-soundfonts
+
+UI 효과음 일부: Kenney Interface Sounds (CC0) — https://kenney.nl
+
+동물·탈것 실제 녹음: ESC-50 dataset, K. J. Piczak (CC BY-NC 3.0) — https://github.com/karolpiczak/ESC-50
+  원본은 freesound.org 녹음이며 짧게 잘라 음량을 맞췄습니다.
+- dog: ESC-50 2-114280-A-0.wav — - [2-114280-A.ogg]: clip derived from dogbarks.wav (http://www.freesound.org/people/plingativator/sounds/114280/) by plingativator [CC-BY]
+- cat: ESC-50 5-172639-A-5.wav — - [5-172639-A.ogg]: clip derived from Cat.mp3 (http://www.freesound.org/people/telesik/sounds/172639/) by telesik [CC-BY]
+- cow: ESC-50 1-16568-A-3.wav — - [1-16568-A.ogg]: clip derived from TwoCows.wav (http://www.freesound.org/people/acclivity/sounds/16568/) by acclivity [CC-BY-NC]
+- pig: ESC-50 3-253084-A-2.wav — - [3-253084-A.ogg]: clip derived from Porsas r\xf6hkii ja kiljuu / A piglet oinking and squealling in the pen (http://www.freesound.org/people/YleArkisto/sounds/253084/) by YleArkisto [CC-BY]
+- rooster: ESC-50 4-183487-A-1.wav — - [4-183487-A.ogg]: clip derived from Chickens.wav (http://www.freesound.org/people/ecfike/sounds/183487/) by ecfike [CC0]
+- sheep: ESC-50 2-119161-A-8.wav — - [2-119161-A.ogg]: clip derived from 110419-000_sheep_bleating.wav (http://www.freesound.org/people/reinsamba/sounds/119161/) by reinsamba [CC-BY]
+- frog: ESC-50 3-71964-C-4.wav — - [3-71964-A.ogg]: clip derived from FrogsFLP.wav (http://www.freesound.org/people/daveincamas/sounds/71964/) by daveincamas [CC-BY]
+- bird: ESC-50 4-159609-B-14.wav — - [4-159609-A.ogg]: clip derived from Sylvia communis (slavka gray). (http://www.freesound.org/people/urupin/sounds/159609/) by urupin [CC-BY]
+- siren: ESC-50 2-70938-A-42.wav — - [2-70938-A.ogg]: clip derived from police2.wav (http://www.freesound.org/people/guitarguy1985/sounds/70938/) by guitarguy1985 [CC0]
+- horn: ESC-50 4-178402-A-43.wav — - [4-178402-A.ogg]: clip derived from honk2.mp3 (http://www.freesound.org/people/genel/sounds/178402/) by genel [CC0]
+- engine: ESC-50 2-107228-B-44.wav — - [2-107228-A.ogg]: clip derived from Triumph start and idle.wav (http://www.freesound.org/people/lonemonk/sounds/107228/) by lonemonk [CC-BY]
+- train: ESC-50 5-197121-B-45.wav — - [5-197121-A.ogg]: clip derived from Train moving slowly (recorded between two cars) (http://www.freesound.org/people/avakas/sounds/197121/) by avakas [CC0]
+- airplane: ESC-50 3-143560-A-47.wav — - [3-143560-A.ogg]: clip derived from P-47 Flyby (http://www.freesound.org/people/Fight2FlyPhoto/sounds/143560/) by Fight2FlyPhoto [CC-BY]
+- heli: ESC-50 3-154926-A-40.wav — - [3-154926-A.ogg]: clip derived from London Exterior  helicopter passes overhead.mp3 (http://www.freesound.org/people/kerouac21/sounds/154926/) by kerouac21 [CC0]
+
+자장가: '반짝반짝 작은 별'(공유 저작물) 선율을 오르골 음원으로 연주.
+풍선·냠냠·와이퍼 등 나머지 효과음은 위 악기 음원과 합성음으로 직접 제작.

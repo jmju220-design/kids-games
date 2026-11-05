@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="꼬마놀이">
+<meta name="theme-color" content="#fff4e0">
+<title>꼬마놀이</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <!-- start screen -->
+  <section id="start" class="screen active">
+    <div class="start-bg"></div>
+    <button id="playBtn" aria-label="시작">
+      <span class="play-tri"></span>
+    </button>
+    <div id="startPals"></div>
+    <p id="status">준비 중…</p>
+  </section>
+
+  <!-- menu -->
+  <section id="menu" class="screen">
+    <div id="tiles"></div>
+    <button id="gear" class="hold" aria-label="설정 (길게 누르기)"><svg viewBox="0 0 40 40"><circle class="ring" cx="20" cy="20" r="17"/></svg><span>⚙︎</span></button>
+  </section>
+
+  <!-- game stage -->
+  <section id="game" class="screen">
+    <div id="stage"></div>
+    <button id="homeBtn" class="hold" aria-label="메뉴로 (길게 누르기)"><svg viewBox="0 0 40 40"><circle class="ring" cx="20" cy="20" r="17"/></svg><span>⌂</span></button>
+  </section>
+
+  <!-- parent settings -->
+  <div id="settings" hidden>
+    <div class="panel">
+      <h2>부모 설정</h2>
+      <label class="row">음량 <input id="vol" type="range" min="0" max="100" step="5"></label>
+      <label class="row">말소리 (강아지, 까꿍 등) <input id="voice" type="checkbox"></label>
+      <p id="offline" class="note"></p>
+      <p class="note">아이가 앱 밖으로 나가지 않게 하려면: 설정 › 손쉬운 사용 › 사용법 유도를 켠 뒤, 앱에서 측면(또는 홈) 버튼을 세 번 누르세요.</p>
+      <p class="note">게임 중 메뉴로 돌아가기: 왼쪽 위 집 버튼을 꾹 누르기 (1초)</p>
+      <button id="closeSettings">닫기</button>
+    </div>
+  </div>
+</div>
+<script src="bundle-img.js"></script>
+<script src="bundle-snd.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

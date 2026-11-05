@@ -1,0 +1,1 @@
+{"name": "꼬마놀이", "short_name": "꼬마놀이", "start_url": "./", "scope": "./", "display": "standalone", "orientation": "any", "background_color": "#fff4e0", "theme_color": "#fff4e0", "icons": [{"src": "icon-180.png", "sizes": "180x180", "type": "image/png"}, {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}]}
